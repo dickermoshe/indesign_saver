@@ -12,7 +12,7 @@ from .dirs import BACKUP_FOLDER_LOCATION
 logger = logging.getLogger(__name__)
 
 TIME_TO_WAIT_FOR_INDESIGN = 10
-TIME_TO_WAIT_BETWEEN_BACKUPS = 10
+TIME_TO_WAIT_BETWEEN_BACKUPS = 60
 
 logger.info(f"Saving backups to {BACKUP_FOLDER_LOCATION}")
 
@@ -58,7 +58,6 @@ class InDesign:
                 time.sleep(1)
                 continue
             
-            logger.info(f"Backing up {file}")
             self.backup(file)
 
             logger.info(f"Waiting {TIME_TO_WAIT_BETWEEN_BACKUPS} until next check")
@@ -70,10 +69,10 @@ class InDesign:
         if latest_version:
             logger.info(f"Latest Backup File: {latest_version}")
             if self.same_file(file, latest_version):
-                logger.info(f"File {file} has not changed since last backup.")
+                logger.info(f"Saving...")
                 self.save()
             if self.same_file(file, latest_version):
-                logger.info(f"File has not been edited since last backup.")
+                logger.info(f"No changes")
                 return
         
         logger.info(f"Backing up {file}")
@@ -83,10 +82,13 @@ class InDesign:
         logger.info(f"Backup saved to {new_version}")
 
     def same_file(self, file1:Path, file2:Path) -> bool:
-        s1 = file1.stat().st_size
-        s2 = file2.stat().st_size
-        logger.info(f"File sizes: {s1} {s2}")
-        return s1 == s2
+        # Hash the files
+        import hashlib
+        with open(file1, 'rb') as f1, open(file2, 'rb') as f2:
+            hash1 = hashlib.md5(f1.read()).hexdigest()
+            hash2 = hashlib.md5(f2.read()).hexdigest()
+
+        return hash1 == hash2
 
     def get_latest_version(self, file: Path) -> tuple[Path|None,int]:
         latest_version_number = 0
