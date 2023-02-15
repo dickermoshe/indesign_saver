@@ -25,6 +25,14 @@ class InDesign:
 
     @classmethod
     def get_app(cls):
+        import psutil
+        # Check for a running InDesign process
+        for proc in psutil.process_iter():
+            if proc.name() == "InDesign.exe":
+                break
+        else:
+            logger.info("InDesign is not running")
+            return None
         try:
             import pythoncom
             pythoncom.CoInitialize()
